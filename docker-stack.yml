@@ -1,0 +1,30 @@
+services:
+  go-notes:
+    image: aanabdulrohman/go-notes:1.0.0
+    ports:
+      - "8081:8080"
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    secrets:
+      - source: app_secret_token
+        target: app_secret_token
+    
+  python-calc:
+    image: aanabdulrohman/python-calc:1.0.0
+    ports:
+      - "8082:8080"
+    deploy:
+      replicas: 1
+
+  node-todo:
+    image: aanabdulrohman/node-todo:1.0.0
+    ports:
+      - "3031:3000"
+    deploy:
+      replicas: 1
+
+secrets:
+  app_secret_token:
+    external: true  
