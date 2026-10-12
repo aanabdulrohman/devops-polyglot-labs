@@ -4,7 +4,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --target=/app/deps -r requirements.txt
 
 FROM python:3.12-alpine
-RUN useradd -u 10001 appuser
+RUN adduser -u 10001 appuser
 USER appuser
 
 WORKDIR /app
