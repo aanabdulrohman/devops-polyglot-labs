@@ -27,7 +27,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # ==========================================
-      # BUILD & SCAN: Go Notes
+      # 1. BUILD & SCAN: Go Notes
       # ==========================================
       - name: Build Go Notes Image
         run: |
@@ -35,7 +35,7 @@ jobs:
             -t "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG" \
             ./go-notes
 
-      - name: Scan Go Notes Image (Via Docker Container)
+      - name: Scan Go Notes Image
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -44,7 +44,7 @@ jobs:
             "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG"
 
       # ==========================================
-      # BUILD & SCAN: Python Calc
+      # 2. BUILD & SCAN: Python Calc
       # ==========================================
       - name: Build Python Calc Image
         run: |
@@ -52,7 +52,7 @@ jobs:
             -t "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG" \
             ./python-calc
 
-      - name: Scan Python Calc Image (Via Docker Container)
+      - name: Scan Python Calc Image
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -61,7 +61,7 @@ jobs:
             "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG"
 
       # ==========================================
-      # BUILD & SCAN: Node Todo
+      # 3. BUILD & SCAN: Node Todo
       # ==========================================
       - name: Build Node Todo Image
         run: |
@@ -69,7 +69,7 @@ jobs:
             -t "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG" \
             ./node-todo
 
-      - name: Scan Node Todo Image (Via Docker Container)
+      - name: Scan Node Todo Image
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -78,16 +78,14 @@ jobs:
             "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG"
 
       # ==========================================
-      # PUSH & DEPLOY
+      # 4. PUSH & DEPLOY
       # ==========================================
-      # Push hanya akan berjalan jika seluruh scan di atas lolos (exit code 0)
       - name: Push Images to DockerHub
         run: |
           docker push "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG"
           docker push "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG"
           docker push "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG"
 
-      # Deploy ke Docker Swarm cluster Anda
       - name: Deploy to Docker Swarm
         run: |
           docker stack deploy \
