@@ -26,50 +26,68 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Build Go Notes
+      # ==========================================
+      # BUILD & SCAN: Go Notes
+      # ==========================================
       - name: Build Go Notes Image
         run: |
           docker build \
             -t "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG" \
             ./go-notes
 
-      - name: Scan Go Notes Image
+      - name: Scan Go Notes Image (Via Docker Container)
         run: |
-          trivy image --exit-code 1 --severity HIGH,CRITICAL \
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $HOME/.cache/trivy:/root/.cache/ \
+            aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL \
             "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG"
 
-      # Build Python Calc
+      # ==========================================
+      # BUILD & SCAN: Python Calc
+      # ==========================================
       - name: Build Python Calc Image
         run: |
           docker build \
             -t "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG" \
             ./python-calc
 
-      - name: Scan Python Calc Image
+      - name: Scan Python Calc Image (Via Docker Container)
         run: |
-          trivy image --exit-code 1 --severity HIGH,CRITICAL \
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $HOME/.cache/trivy:/root/.cache/ \
+            aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL \
             "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG"
 
-      # Build Node Todo
+      # ==========================================
+      # BUILD & SCAN: Node Todo
+      # ==========================================
       - name: Build Node Todo Image
         run: |
           docker build \
             -t "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG" \
             ./node-todo
 
-      - name: Scan Node Todo Image
+      - name: Scan Node Todo Image (Via Docker Container)
         run: |
-          trivy image --exit-code 1 --severity HIGH,CRITICAL \
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $HOME/.cache/trivy:/root/.cache/ \
+            aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL \
             "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG"
 
-      # Push only after all scans pass
+      # ==========================================
+      # PUSH & DEPLOY
+      # ==========================================
+      # Push hanya akan berjalan jika seluruh scan di atas lolos (exit code 0)
       - name: Push Images to DockerHub
         run: |
           docker push "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG"
           docker push "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG"
           docker push "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG"
 
-      # Deploy
+      # Deploy ke Docker Swarm cluster Anda
       - name: Deploy to Docker Swarm
         run: |
           docker stack deploy \
