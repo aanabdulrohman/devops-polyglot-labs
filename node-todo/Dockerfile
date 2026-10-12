@@ -1,8 +1,10 @@
+# --- Stage 1: Install Dependencies ---
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
+# --- Stage 2: Runtime Production ---
 FROM node:20-alpine
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
