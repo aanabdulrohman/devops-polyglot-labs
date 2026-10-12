@@ -5,53 +5,74 @@ on:
     tags:
       - '*.*.*'
 
+permissions:
+  contents: read
+
 jobs:
   security-and-build:
     runs-on: self-hosted
-    
+
+    env:
+      IMAGE_TAG: ${{ github.ref_name }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    
-    # Build and Scan Go Notes Image
-    - name: Build Go Notes Image
-      run: |
-        docker build -t ${{  secrets.DOCKERHUB_USERNAME }}/go-notes:{github.ref_name} ./go-notes
-    
-    - name: Run Trivy Vurnerability Scan for Go Notes
-      run: |
-        trivy image ${{  secrets.DOCKERHUB_USERNAME }}/go-notes:{github.ref_name}
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # Build and Scan Python Calc Image
-    - name: Build Python Calc Image
-      run: |
-        docker build -t ${{  secrets.DOCKERHUB_USERNAME }}/python-calc:{github.ref_name} ./python-calc
+      # Build Go Notes
+      - name: Build Go Notes Image
+        run: |
+          docker build \
+            -t "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG" \
+            ./go-notes
 
-    - name: Run Trivy Vulnerability Scan for Python Calc
-      run: |
-        trivy image ${{  secrets.DOCKERHUB_USERNAME }}/python-calc:{github.ref_name}
+      - name: Scan Go Notes Image
+        run: |
+          trivy image --exit-code 1 --severity HIGH,CRITICAL \
+            "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG"
 
-    # Build and Scan Node Todo Image
-    - name: Build Node Todo Image
-      run: |
-        docker build -t ${{  secrets.DOCKERHUB_USERNAME }}/node-todo:{github.ref_name} ./node-todo
-  
-    - name: Run Trivy Vulnerability Scan for Node Todo
-      run: |
-        trivy image ${{  secrets.DOCKERHUB_USERNAME }}/node-todo:{github.ref_name}
+      # Build Python Calc
+      - name: Build Python Calc Image
+        run: |
+          docker build \
+            -t "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG" \
+            ./python-calc
 
-    - name: Push Images to DockerHub
-      run: |
-        docker push ${{  secrets.DOCKERHUB_USERNAME }}/go-notes:{github.ref_name}
-        docker push ${{  secrets.DOCKERHUB_USERNAME }}/python-calc:{github.ref_name}
-        docker push ${{  secrets.DOCKERHUB_USERNAME }}/node-todo:{github.ref_name}
-    
-    - name: Deploy to Docker Swarm
-      run: |
-        docker stack deploy -c docker-stack.yml devops-polyglot-lab
+      - name: Scan Python Calc Image
+        run: |
+          trivy image --exit-code 1 --severity HIGH,CRITICAL \
+            "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG"
+
+      # Build Node Todo
+      - name: Build Node Todo Image
+        run: |
+          docker build \
+            -t "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG" \
+            ./node-todo
+
+      - name: Scan Node Todo Image
+        run: |
+          trivy image --exit-code 1 --severity HIGH,CRITICAL \
+            "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG"
+
+      # Push only after all scans pass
+      - name: Push Images to DockerHub
+        run: |
+          docker push "$DOCKERHUB_USERNAME/go-notes:$IMAGE_TAG"
+          docker push "$DOCKERHUB_USERNAME/python-calc:$IMAGE_TAG"
+          docker push "$DOCKERHUB_USERNAME/node-todo:$IMAGE_TAG"
+
+      # Deploy
+      - name: Deploy to Docker Swarm
+        run: |
+          docker stack deploy \
+            --with-registry-auth \
+            -c docker-stack.yml \
+            devops-polyglot-lab
