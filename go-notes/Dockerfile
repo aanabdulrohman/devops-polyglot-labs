@@ -5,7 +5,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o go-notes main.go
 
 # --- Stage 2: Runtime Production ---
-FROM alpine:3.19
+FROM alpine:3.24.2
 # Membuat non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
